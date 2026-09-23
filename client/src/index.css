@@ -23,9 +23,7 @@ body{margin:0;background:var(--cream);color:var(--ink);font-family:"Space Grotes
 /* Cyber & Spatial Glassmorphism Utilities */
 .cyber-card {
   position: relative;
-  background: linear-gradient(180deg, rgba(18, 18, 28, 0.88) 0%, rgba(10, 10, 16, 0.94) 50%, rgba(5, 5, 8, 0.98) 100%);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: #08080e;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-top: 2px solid #ff1744;
   box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 23, 68, 0.12);
@@ -41,8 +39,7 @@ body{margin:0;background:var(--cream);color:var(--ink);font-family:"Space Grotes
 
 .cyber-card-gold {
   position: relative;
-  background: linear-gradient(180deg, rgba(28, 22, 12, 0.9) 0%, rgba(16, 12, 6, 0.95) 50%, rgba(8, 6, 3, 0.98) 100%);
-  backdrop-filter: blur(24px);
+  background: #0f0c06;
   border: 1px solid rgba(255, 214, 0, 0.35);
   border-top: 2px solid #ffd600;
   box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.9), 0 0 30px rgba(255, 214, 0, 0.25);

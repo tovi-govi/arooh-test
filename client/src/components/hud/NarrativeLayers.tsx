@@ -162,8 +162,8 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
 
   // Buffer Zone: 0.77 to 0.83 (Clear, spacious scroll runway between Events and Timeline)
 
-  // 6. SCHEDULE & TIMELINE (0.83 - 1.00) - Unobstructed horizontal timeline
-  const scheduleStyle = getWindowStyle(0.83, 0.86, 1.05, 1.10);
+  // 6. SCHEDULE & TIMELINE (0.80 - 1.00) - Unobstructed horizontal timeline
+  const scheduleStyle = getWindowStyle(0.80, 0.83, 1.05, 1.10);
 
   useEffect(() => {
     if (!timelineTrackRef.current) return;
@@ -186,13 +186,19 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
     };
   }, [scheduleStyle.visible]);
 
-  // Horizontal timeline progress spanning chapter 6 [0.85 to 0.99]
-  const timelineProgress = Math.max(0, Math.min(1, (progress - 0.85) / 0.14));
+  // Horizontal timeline progress:
+  // Generous dwell zone from 0.82 to 0.88 (translateX = 0) so visitors have ample time
+  // to view and read the entire Day 1 sequence before the timeline begins scrolling
+  const timelineScrollStart = 0.88;
+  const timelineScrollEnd = 0.99;
+  const timelineProgress = progress <= timelineScrollStart
+    ? 0
+    : Math.min(1, (progress - timelineScrollStart) / (timelineScrollEnd - timelineScrollStart));
   const horizontalTranslateX = -timelineProgress * maxScrollX;
 
   // Active milestone phase
   const currentPhase: "day1" | "day2" | "backers" | "finale" =
-    timelineProgress < 0.38 ? "day1" : timelineProgress < 0.72 ? "day2" : timelineProgress < 0.92 ? "backers" : "finale";
+    timelineProgress < 0.25 ? "day1" : timelineProgress < 0.65 ? "day2" : timelineProgress < 0.90 ? "backers" : "finale";
 
   return (
     <div className="narrative-overlay fixed inset-0 z-20 pointer-events-none flex flex-col justify-center items-center text-[#f4efe3]">
@@ -357,7 +363,7 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
             opacity: scheduleStyle.opacity,
             pointerEvents: scheduleStyle.pointerEvents,
           }}
-          className="fixed inset-0 pointer-events-auto flex flex-col justify-between select-none overflow-hidden z-20"
+          className="fixed inset-0 pointer-events-auto flex flex-col justify-between select-none overflow-hidden z-20 bg-[#060609]/85 backdrop-blur-md"
         >
           {/* Top HUD: Title, Station Scrubber & Quick Jumps */}
           <div className="pt-20 sm:pt-24 px-6 sm:px-14 flex flex-col sm:flex-row sm:items-end justify-between gap-4 z-30 pointer-events-auto">
@@ -384,7 +390,7 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
                   01 // DAY 1
                 </button>
                 <button
-                  onClick={() => onJumpToProgress(0.91)}
+                  onClick={() => onJumpToProgress(0.92)}
                   className={`px-3 py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all border ${currentPhase === "day2"
                       ? "bg-[#ff1744] border-[#ff1744] text-white shadow-[0_0_15px_rgba(255,23,68,0.6)]"
                       : "bg-black/70 border-white/20 text-[#f4efe3]/60 hover:text-white"
@@ -402,7 +408,7 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
                   03 // PARTNERS
                 </button>
                 <button
-                  onClick={() => onJumpToProgress(0.99)}
+                  onClick={() => onJumpToProgress(1.00)}
                   className={`px-3 py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all border ${currentPhase === "finale"
                       ? "bg-[#ff1744] border-[#ff1744] text-white shadow-[0_0_15px_rgba(255,23,68,0.6)]"
                       : "bg-black/70 border-white/20 text-[#f4efe3]/60 hover:text-white"
@@ -450,57 +456,26 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
             {/* The Horizontal Timeline Connecting Axis Line */}
             <div className="absolute top-[36px] left-0 right-0 h-[2px] bg-gradient-to-r from-[#ff1744]/20 via-[#ff1744]/80 to-[#ff1744]/20 shadow-[0_0_10px_rgba(255,23,68,0.6)] pointer-events-none z-0" />
 
-            {/* Background Kinetic TextLoop Wave - flowing left to right behind cards */}
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0 opacity-80">
+            {/* Ambient Kinetic TextLoop Wave - flowing smoothly left to right in the background */}
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0 opacity-30">
               <TextLoop
                 text="AROOH // 2026"
                 shape="wave"
-                speed={75}
+                speed={45}
                 direction="forward"
                 separator="✦ 36H MELEE ✦ MIT ADT PUNE ✦ ₹8L POOL ✦ ENTER THE ARENAS ✦"
-                curviness={100}
-                fontSize={46}
-                fontWeight={800}
-                letterSpacing={3}
+                curviness={50}
+                fontSize={22}
+                fontWeight={700}
+                letterSpacing={2}
                 uppercase
-                color="#f4efe3"
+                color="rgba(244, 239, 227, 0.7)"
                 ribbon
-                ribbonColor="rgba(255, 23, 68, 0.42)"
-                ribbonWidth={76}
+                ribbonColor="rgba(255, 23, 68, 0.25)"
+                ribbonWidth={38}
                 pauseOnHover={false}
                 preserveAspectRatio="none"
-                className="w-full h-full min-h-[440px]"
-              />
-            </div>
-
-            {/* Foreground Weaving TextLoop Layer - passing IN FRONT of alternating elements */}
-            <div
-              style={{
-                WebkitMaskImage: "repeating-linear-gradient(90deg, transparent 0px, transparent 350px, black 350px, black 700px)",
-                maskImage: "repeating-linear-gradient(90deg, transparent 0px, transparent 350px, black 350px, black 700px)",
-                WebkitMaskPosition: `${horizontalTranslateX}px 0`,
-                maskPosition: `${horizontalTranslateX}px 0`,
-              }}
-              className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-20 opacity-85"
-            >
-              <TextLoop
-                text="AROOH // 2026"
-                shape="wave"
-                speed={75}
-                direction="forward"
-                separator="✦ 36H MELEE ✦ MIT ADT PUNE ✦ ₹8L POOL ✦ ENTER THE ARENAS ✦"
-                curviness={100}
-                fontSize={46}
-                fontWeight={800}
-                letterSpacing={3}
-                uppercase
-                color="#f4efe3"
-                ribbon
-                ribbonColor="rgba(255, 23, 68, 0.42)"
-                ribbonWidth={76}
-                pauseOnHover={false}
-                preserveAspectRatio="none"
-                className="w-full h-full min-h-[440px]"
+                className="w-full h-full"
               />
             </div>
 
@@ -513,7 +488,7 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
               className="flex items-stretch gap-6 px-6 sm:px-14 flex-nowrap z-10"
             >
               {/* STAGE 1 BADGE: DAY 01 */}
-              <TimelineCard className="w-[320px] sm:w-[350px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 sm:p-6 bg-gradient-to-br from-[#ff1744]/25 via-[#0a0a10]/95 to-black/98 border-[#ff1744]">
+              <TimelineCard className="w-[320px] sm:w-[350px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 sm:p-6 bg-[#08080e] border-[#ff1744]">
                 <div>
                   {/* Milestone Junction Diode */}
                   <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
@@ -571,7 +546,7 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
               {SCHEDULE_DATA.day1.map((item, idx) => (
                 <TimelineCard
                   key={`day1-${idx}`}
-                  className="w-[290px] sm:w-[330px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 group"
+                  className="w-[290px] sm:w-[330px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 group bg-[#08080e] border-white/10"
                 >
                   <div>
                     {/* Station Node Header */}
@@ -623,7 +598,7 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
               ))}
 
               {/* STAGE 2 BADGE: DAY 02 */}
-              <TimelineCard className="w-[320px] sm:w-[350px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 sm:p-6 bg-gradient-to-br from-[#ff1744]/25 via-[#0a0a10]/95 to-black/98 border-[#ff1744]">
+              <TimelineCard className="w-[320px] sm:w-[350px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 sm:p-6 bg-[#08080e] border-[#ff1744]">
                 <div>
                   {/* Milestone Junction Diode */}
                   <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
@@ -685,8 +660,8 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
                     key={`day2-${idx}`}
                     isGold={isAward}
                     className={`w-[290px] sm:w-[330px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 group ${isAward
-                        ? "bg-gradient-to-b from-[#ffd600]/15 via-[#0a0a10]/95 to-[#151005]/98"
-                        : ""
+                        ? "bg-[#0f0c06] border-[#ffd600]/40"
+                        : "bg-[#08080e] border-white/10"
                       }`}
                   >
                     <div>
@@ -783,7 +758,7 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
               })}
 
               {/* STAGE 3: BACKERS & PARTNER ECOSYSTEM */}
-              <TimelineCard className="w-[580px] sm:w-[660px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 sm:p-6 bg-[#0a0a10]/95">
+              <TimelineCard className="w-[580px] sm:w-[660px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 sm:p-6 bg-[#08080e] border-white/15">
                 <div>
                   {/* Milestone Junction Diode */}
                   <div className="flex items-center justify-between border-b border-white/15 pb-2 mb-3">
@@ -845,7 +820,7 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
               </TimelineCard>
 
               {/* STAGE 4: TRANSMISSION END & FINALE */}
-              <TimelineCard className="w-[340px] sm:w-[380px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 sm:p-6 bg-gradient-to-b from-[#0a0a10]/95 via-[#1a050a]/95 to-black/98 border-[#ff1744]">
+              <TimelineCard className="w-[340px] sm:w-[380px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 sm:p-6 bg-[#08080e] border-[#ff1744]">
                 <div>
                   <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
                     <div className="flex items-center gap-2">

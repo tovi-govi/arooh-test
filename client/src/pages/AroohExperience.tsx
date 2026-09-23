@@ -139,10 +139,10 @@ export default function AroohExperience() {
         </div>
       )}
 
-      {/* Controlled Scroll Track Spacer (650vh) providing a deliberate, cinematic timeline and buffer */}
+      {/* Controlled Scroll Track Spacer (1200vh) providing a deliberate, cinematic timeline and buffer */}
       <div
         className="w-full pointer-events-none opacity-0"
-        style={{ height: "900vh" }}
+        style={{ height: "1200vh" }}
         aria-hidden="true"
       />
     </div>

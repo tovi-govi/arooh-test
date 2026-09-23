@@ -1079,20 +1079,12 @@ export const AroohCanvas: React.FC<AroohCanvasProps> = memo(() => {
         tm.ring.rotation.z -= 0.015;
       });
 
-      // 13. Timeline Stage Volumetric Backlighting (CH_05)
+      // 13. Timeline Stage Volumetric Backlighting (CH_05) - subtle floor light, clean background
       const inTimeline = p >= 0.80;
-      timelinePillarsGroup.visible = inTimeline;
+      timelinePillarsGroup.visible = false;
       if (inTimeline) {
         const timelineFadeIn = Math.min(1, (p - 0.80) / 0.04);
-        pillarMeshes.forEach((pm, idx) => {
-          const mat = pm.material as THREE.MeshBasicMaterial;
-          const pulse = Math.sin(elapsedTime * 2.2 + idx * 1.5) * 0.12 + 0.35;
-          mat.opacity = pulse * timelineFadeIn;
-          pm.rotation.y = elapsedTime * 0.15 + idx;
-        });
-
-        // Stage floor fill light tracking with camera X
-        timelineStageLight.intensity = timelineFadeIn * 2.8;
+        timelineStageLight.intensity = timelineFadeIn * 1.2;
         timelineStageLight.position.x = camPos.x;
         timelineStageLight.position.z = camPos.z - 10;
       } else {

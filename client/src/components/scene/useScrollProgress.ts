@@ -54,8 +54,8 @@ export const CHAPTERS: ChapterInfo[] = [
     id: "schedule",
     code: "05",
     name: "Run of Show",
-    target: 0.91,
-    range: [0.83, 1.00],
+    target: 0.85,
+    range: [0.82, 1.00],
     description: "Two Days & Ecosystem",
   },
 ];
