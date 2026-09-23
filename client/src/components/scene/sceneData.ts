@@ -101,20 +101,110 @@ export const TRACKS: TrackItem[] = [
   },
 ];
 
-export const SCHEDULE_DATA = {
+export interface ScheduleItem {
+  time: string;
+  title: string;
+  desc: string;
+  location: string;
+  tag: string;
+  metric: string;
+  status: string;
+}
+
+export const SCHEDULE_DATA: { day1: ScheduleItem[]; day2: ScheduleItem[] } = {
   day1: [
-    { time: "09:00", title: "Gates Open & Check-In", desc: "Passcode verification, hardware kit collection, and caffeine terminal online." },
-    { time: "10:30", title: "Ignition Ceremony", desc: "Keynote address, festival guidelines, and track briefing in the Main Auditorium." },
-    { time: "12:00", title: "Hack the Grid Begins", desc: "Clock starts on the 36-hour sprint. API gateways and mentor channels unlock." },
-    { time: "16:00", title: "Robo Riot Arena Qualifying", desc: "Heats begin in the steel arena. Weight and safety checks verified." },
-    { time: "20:30", title: "Night Shift Social & DJ Set", desc: "Fuel reload, lightning demos, and modular synth live performances." },
+    {
+      time: "09:00",
+      title: "Gates Open & Check-In",
+      desc: "Passcode verification, hardware kit collection, and caffeine terminal online.",
+      location: "WEST ACCESS PORTAL",
+      tag: "BIO & RFID PASS",
+      metric: "800+ BUILDERS",
+      status: "GATES ACTIVE",
+    },
+    {
+      time: "10:30",
+      title: "Ignition Ceremony",
+      desc: "Keynote address, festival guidelines, and track briefing in the Main Auditorium.",
+      location: "MAIN AUDITORIUM",
+      tag: "KEYNOTE & PROTOCOL",
+      metric: "4 KEYNOTE ARCHITECTS",
+      status: "STAGE 01 ONLINE",
+    },
+    {
+      time: "12:00",
+      title: "Hack the Grid Begins",
+      desc: "Clock starts on the 36-hour sprint. API gateways and mentor channels unlock.",
+      location: "COMBAT PROTOCOL LABS",
+      tag: "36:00:00 SPRINT CLOCK",
+      metric: "120+ SQUADS ARMED",
+      status: "COMMITS LIVE",
+    },
+    {
+      time: "16:00",
+      title: "Robo Riot Arena Qualifying",
+      desc: "Heats begin in the steel arena. Weight and safety checks verified.",
+      location: "STEEL PIT ARENA",
+      tag: "45NM TORQUE LIMIT",
+      metric: "30KG COMBAT CLASS",
+      status: "HAZARDS ARMED",
+    },
+    {
+      time: "20:30",
+      title: "Night Shift Social & DJ Set",
+      desc: "Fuel reload, lightning demos, and modular synth live performances.",
+      location: "MEZZANINE ROOFTOP",
+      tag: "SYNTH WAVE 130BPM",
+      metric: "LIGHTNING DEMOS",
+      status: "NIGHT RUNTIME",
+    },
   ],
   day2: [
-    { time: "09:30", title: "Deep Tech Masterclasses", desc: "Hands-on workshops with lead architects on WebAssembly, AI infra, and robotics." },
-    { time: "12:00", title: "Red CTF Final Blitz", desc: "Scoring engine accelerates. Final flags injected into live vulnerable instances." },
-    { time: "15:00", title: "Idea Mine Pitch Stadium", desc: "Top 8 finalists take the stage before jury panel and venture partners." },
-    { time: "18:00", title: "Grand Awards Ceremony", desc: "₹8,00,000 prize distribution, track champion trophies, and special honors." },
-    { time: "19:30", title: "Afterparty: Transmission End", desc: "Celebration, networking, and festival conclusion." },
+    {
+      time: "09:30",
+      title: "Deep Tech Masterclasses",
+      desc: "Hands-on workshops with lead architects on WebAssembly, AI infra, and robotics.",
+      location: "LAB 04 // WASM & AI",
+      tag: "RUST + ONNX RUNTIME",
+      metric: "200 SEATS LIMITED",
+      status: "TERMINALS ARMED",
+    },
+    {
+      time: "12:00",
+      title: "Red CTF Final Blitz",
+      desc: "Scoring engine accelerates. Final flags injected into live vulnerable instances.",
+      location: "ZERO-DAY VAULT",
+      tag: "500 PTS BONUS FLAGS",
+      metric: "DEFENSE MATRICES",
+      status: "ATTACK BLITZ",
+    },
+    {
+      time: "15:00",
+      title: "Idea Mine Pitch Stadium",
+      desc: "Top 8 finalists take the stage before jury panel and venture partners.",
+      location: "VENTURE AMPHITHEATER",
+      tag: "3 MIN PITCH + 2 MIN Q&A",
+      metric: "14 VC PARTNER FUNDS",
+      status: "JURY IN SESSION",
+    },
+    {
+      time: "18:00",
+      title: "Grand Awards Ceremony",
+      desc: "₹8,00,000 prize distribution, track champion trophies, and special honors.",
+      location: "MAIN ARENA LIVESTREAM",
+      tag: "₹8,00,000 BOUNTY POOL",
+      metric: "6 CHAMPION TROPHIES",
+      status: "VICTORY PROTOCOL",
+    },
+    {
+      time: "19:30",
+      title: "Afterparty: Transmission End",
+      desc: "Celebration, networking, and festival conclusion.",
+      location: "TERMINAL MAIN DECK",
+      tag: "OPEN SOCIAL ACCESS",
+      metric: "ALL BADGES WELCOME",
+      status: "TRANSMISSION END",
+    },
   ],
 };
 

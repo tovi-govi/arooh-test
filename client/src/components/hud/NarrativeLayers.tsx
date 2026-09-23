@@ -1,21 +1,117 @@
 import React, { useState, useRef, useEffect } from "react";
 import { SCHEDULE_DATA, SPONSORS, TrackItem } from "../scene/sceneData";
 import { ArenaSelectionHub } from "./ArenaSelectionHub";
+import TextLoop from "../ui/TextLoop";
 
 interface NarrativeLayersProps {
   progress: number;
   onHoverTrack?: (id: string | null) => void;
   onSelectTrack: (track: TrackItem) => void;
   onJumpToProgress: (target: number) => void;
+  onDownloadBrochure?: () => void;
   onOpenRegisterModal?: (trackTitle?: string) => void;
   registeredTrackDefault?: string;
 }
+
+interface TimelineCardProps {
+  children: React.ReactNode;
+  className?: string;
+  isGold?: boolean;
+  hasDropLine?: boolean;
+}
+
+const TimelineCard: React.FC<TimelineCardProps> = ({
+  children,
+  className = "",
+  isGold = false,
+  hasDropLine = true,
+}) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    // Subtle, responsive tilt between -6 and 6 degrees
+    const rotateX = ((centerY - y) / centerY) * 6;
+    const rotateY = ((x - centerX) / centerX) * 6;
+    setTilt({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setTilt({ x: 0, y: 0 });
+  };
+
+  const bracketColor = isGold ? "border-[#ffd600]" : "border-[#ff1744]";
+  const glowShadow = isGold
+    ? "0 20px 50px -10px rgba(0, 0, 0, 0.95), 0 0 35px rgba(255, 214, 0, 0.35)"
+    : "0 20px 50px -10px rgba(0, 0, 0, 0.95), 0 0 35px rgba(255, 23, 68, 0.3)";
+
+  return (
+    <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        transform: isHovered
+          ? `perspective(900px) rotateX(${tilt.x.toFixed(2)}deg) rotateY(${tilt.y.toFixed(2)}deg) translateY(-6px) scale(1.02)`
+          : "perspective(900px) rotateX(0deg) rotateY(0deg) translateY(0px) scale(1)",
+        boxShadow: isHovered ? glowShadow : undefined,
+        zIndex: isHovered ? 40 : undefined,
+        transition: isHovered ? "transform 0.1s ease-out" : "transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.4s ease",
+      }}
+      className={`relative flex-shrink-0 cyber-grid-bg select-none transition-colors ${isGold ? "cyber-card-gold" : "cyber-card"
+        } ${className}`}
+    >
+      {/* Laser Drop-Line from Horizontal Rail */}
+      {hasDropLine && (
+        <div className="absolute -top-7 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-0">
+          <div
+            className={`w-[2px] h-7 ${isGold
+                ? "bg-gradient-to-b from-[#ffd600]/80 via-[#ffd600] to-[#ffd600]/40 shadow-[0_0_8px_#ffd600]"
+                : "bg-gradient-to-b from-[#ff1744]/80 via-[#ff1744] to-[#ff1744]/40 shadow-[0_0_8px_#ff1744]"
+              }`}
+          />
+          <div
+            className={`w-2.5 h-2.5 rounded-full ring-2 ring-black -mt-1 ${isGold
+                ? "bg-[#ffd600] shadow-[0_0_10px_#ffd600]"
+                : "bg-[#ff1744] shadow-[0_0_10px_#ff1744]"
+              }`}
+          />
+        </div>
+      )}
+
+      {/* Cybernetic Corner Brackets */}
+      <span className={`absolute top-1.5 left-1.5 w-2.5 h-2.5 border-t-2 border-l-2 ${bracketColor} pointer-events-none opacity-80`} />
+      <span className={`absolute top-1.5 right-1.5 w-2.5 h-2.5 border-t-2 border-r-2 ${bracketColor} pointer-events-none opacity-80`} />
+      <span className={`absolute bottom-1.5 left-1.5 w-2.5 h-2.5 border-b-2 border-l-2 ${bracketColor} pointer-events-none opacity-80`} />
+      <span className={`absolute bottom-1.5 right-1.5 w-2.5 h-2.5 border-b-2 border-r-2 ${bracketColor} pointer-events-none opacity-80`} />
+
+      {/* Card Content with 3D depth */}
+      <div className="relative z-10 w-full h-full flex flex-col justify-between">
+        {children}
+      </div>
+    </div>
+  );
+};
 
 export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
   progress,
   onHoverTrack,
   onSelectTrack,
   onJumpToProgress,
+  onDownloadBrochure,
   onOpenRegisterModal,
 }) => {
   const timelineTrackRef = useRef<HTMLDivElement>(null);
@@ -227,10 +323,11 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
               EXPLORE ARENAS ↓
             </button>
             <button
-              onClick={() => (onOpenRegisterModal ? onOpenRegisterModal() : onJumpToProgress(0.92))}
-              className="px-6 py-2.5 border border-[#ff1744] bg-black/80 text-[#f4efe3] hover:bg-[#ff1744] hover:text-white font-bold uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(255,23,68,0.3),3px_3px_0_#000]"
+              onClick={() => (onDownloadBrochure ? onDownloadBrochure() : onJumpToProgress(0.92))}
+              className="px-6 py-2.5 border border-[#ff1744] bg-black/80 text-[#f4efe3] hover:bg-[#ff1744] hover:text-white font-bold uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(255,23,68,0.3),3px_3px_0_#000] flex items-center gap-2"
             >
-              REGISTER NOW ↗
+              <span>DOWNLOAD BROCHURE</span>
+              <span>↓</span>
             </button>
           </div>
         </div>
@@ -279,41 +376,37 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   onClick={() => onJumpToProgress(0.85)}
-                  className={`px-3 py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all border ${
-                    currentPhase === "day1"
+                  className={`px-3 py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all border ${currentPhase === "day1"
                       ? "bg-[#ff1744] border-[#ff1744] text-white shadow-[0_0_15px_rgba(255,23,68,0.6)]"
                       : "bg-black/70 border-white/20 text-[#f4efe3]/60 hover:text-white"
-                  }`}
+                    }`}
                 >
                   01 // DAY 1
                 </button>
                 <button
                   onClick={() => onJumpToProgress(0.91)}
-                  className={`px-3 py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all border ${
-                    currentPhase === "day2"
+                  className={`px-3 py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all border ${currentPhase === "day2"
                       ? "bg-[#ff1744] border-[#ff1744] text-white shadow-[0_0_15px_rgba(255,23,68,0.6)]"
                       : "bg-black/70 border-white/20 text-[#f4efe3]/60 hover:text-white"
-                  }`}
+                    }`}
                 >
                   02 // DAY 2
                 </button>
                 <button
                   onClick={() => onJumpToProgress(0.96)}
-                  className={`px-3 py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all border ${
-                    currentPhase === "backers"
+                  className={`px-3 py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all border ${currentPhase === "backers"
                       ? "bg-[#ff1744] border-[#ff1744] text-white shadow-[0_0_15px_rgba(255,23,68,0.6)]"
                       : "bg-black/70 border-white/20 text-[#f4efe3]/60 hover:text-white"
-                  }`}
+                    }`}
                 >
                   03 // PARTNERS
                 </button>
                 <button
                   onClick={() => onJumpToProgress(0.99)}
-                  className={`px-3 py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all border ${
-                    currentPhase === "finale"
+                  className={`px-3 py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all border ${currentPhase === "finale"
                       ? "bg-[#ff1744] border-[#ff1744] text-white shadow-[0_0_15px_rgba(255,23,68,0.6)]"
                       : "bg-black/70 border-white/20 text-[#f4efe3]/60 hover:text-white"
-                  }`}
+                    }`}
                 >
                   04 // FINALE
                 </button>
@@ -353,9 +446,63 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
           </div>
 
           {/* Center: The Continuous Horizontal Timeline Ribbon */}
-          <div className="relative w-full flex-1 flex items-center overflow-x-visible overflow-y-hidden my-auto py-2">
+          <div className="relative w-full flex-1 flex items-center overflow-x-visible overflow-y-hidden my-auto pt-7 pb-2">
             {/* The Horizontal Timeline Connecting Axis Line */}
-            <div className="absolute top-[28px] left-0 right-0 h-[2px] bg-gradient-to-r from-[#ff1744]/20 via-[#ff1744]/80 to-[#ff1744]/20 shadow-[0_0_10px_rgba(255,23,68,0.6)] pointer-events-none z-0" />
+            <div className="absolute top-[36px] left-0 right-0 h-[2px] bg-gradient-to-r from-[#ff1744]/20 via-[#ff1744]/80 to-[#ff1744]/20 shadow-[0_0_10px_rgba(255,23,68,0.6)] pointer-events-none z-0" />
+
+            {/* Background Kinetic TextLoop Wave - flowing left to right behind cards */}
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0 opacity-80">
+              <TextLoop
+                text="AROOH // 2026"
+                shape="wave"
+                speed={75}
+                direction="forward"
+                separator="✦ 36H MELEE ✦ MIT ADT PUNE ✦ ₹8L POOL ✦ ENTER THE ARENAS ✦"
+                curviness={100}
+                fontSize={46}
+                fontWeight={800}
+                letterSpacing={3}
+                uppercase
+                color="#f4efe3"
+                ribbon
+                ribbonColor="rgba(255, 23, 68, 0.42)"
+                ribbonWidth={76}
+                pauseOnHover={false}
+                preserveAspectRatio="none"
+                className="w-full h-full min-h-[440px]"
+              />
+            </div>
+
+            {/* Foreground Weaving TextLoop Layer - passing IN FRONT of alternating elements */}
+            <div
+              style={{
+                WebkitMaskImage: "repeating-linear-gradient(90deg, transparent 0px, transparent 350px, black 350px, black 700px)",
+                maskImage: "repeating-linear-gradient(90deg, transparent 0px, transparent 350px, black 350px, black 700px)",
+                WebkitMaskPosition: `${horizontalTranslateX}px 0`,
+                maskPosition: `${horizontalTranslateX}px 0`,
+              }}
+              className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-20 opacity-85"
+            >
+              <TextLoop
+                text="AROOH // 2026"
+                shape="wave"
+                speed={75}
+                direction="forward"
+                separator="✦ 36H MELEE ✦ MIT ADT PUNE ✦ ₹8L POOL ✦ ENTER THE ARENAS ✦"
+                curviness={100}
+                fontSize={46}
+                fontWeight={800}
+                letterSpacing={3}
+                uppercase
+                color="#f4efe3"
+                ribbon
+                ribbonColor="rgba(255, 23, 68, 0.42)"
+                ribbonWidth={76}
+                pauseOnHover={false}
+                preserveAspectRatio="none"
+                className="w-full h-full min-h-[440px]"
+              />
+            </div>
 
             <div
               ref={timelineTrackRef}
@@ -366,45 +513,69 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
               className="flex items-stretch gap-6 px-6 sm:px-14 flex-nowrap z-10"
             >
               {/* STAGE 1 BADGE: DAY 01 */}
-              <div className="w-[300px] sm:w-[340px] h-[390px] sm:h-[420px] max-h-[58vh] flex-shrink-0 p-6 bg-gradient-to-br from-[#ff1744]/30 via-[#0a0a10]/95 to-black/95 backdrop-blur-2xl border-2 border-[#ff1744] shadow-[0_0_40px_rgba(255,23,68,0.35)] flex flex-col justify-between relative">
-                {/* Timeline Junction Diode */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-3 h-3 rounded-full bg-[#ff1744] shadow-[0_0_10px_#ff1744] ring-4 ring-[#ff1744]/30 animate-pulse" />
-                  <span className="font-mono text-[10px] tracking-widest text-[#ff1744] uppercase font-bold">
-                    MILESTONE // STAGE 01
-                  </span>
-                </div>
-
+              <TimelineCard className="w-[320px] sm:w-[350px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 sm:p-6 bg-gradient-to-br from-[#ff1744]/25 via-[#0a0a10]/95 to-black/98 border-[#ff1744]">
                 <div>
-                  <span className="inline-block px-2.5 py-1 bg-[#ff1744] text-white font-mono font-bold text-[10px] uppercase tracking-widest mb-3">
-                    PHASE 01 // 36H MELEE
-                  </span>
-                  <div className="text-4xl sm:text-5xl font-['Anton'] uppercase text-white leading-none mb-1.5">
-                    DAY 01
+                  {/* Milestone Junction Diode */}
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#ff1744] shadow-[0_0_10px_#ff1744] ring-4 ring-[#ff1744]/30 animate-pulse" />
+                      <span className="font-mono text-[10px] tracking-widest text-[#ff1744] uppercase font-bold">
+                        MILESTONE // STAGE 01
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-white/50 tracking-wider">FRI 14 NOV</span>
                   </div>
-                  <div className="font-mono text-sm font-bold text-[#ff1744] tracking-wider mb-3">
-                    FRI 14 NOV 2026
+
+                  <div>
+                    <span className="inline-block px-2.5 py-0.5 bg-[#ff1744] text-white font-mono font-bold text-[10px] uppercase tracking-widest mb-2 shadow-[0_0_12px_rgba(255,23,68,0.5)]">
+                      PHASE 01 // 36H MELEE
+                    </span>
+                    <div className="text-4xl sm:text-5xl font-['Anton'] uppercase text-white leading-none mb-1">
+                      DAY 01
+                    </div>
+                    <div className="font-mono text-xs font-bold text-[#ff1744] tracking-wider mb-2">
+                      FRI 14 NOV 2026 // IGNITION
+                    </div>
+                    <p className="text-xs text-[#f4efe3]/80 leading-relaxed font-sans mb-3">
+                      36-hour non-stop engineering marathon begins. API gateways unlock, hardware kits handed over, mentorship pods activate, and midnight sprint shifts begin.
+                    </p>
                   </div>
-                  <p className="text-xs text-[#f4efe3]/85 leading-relaxed font-sans">
-                    36-hour non-stop engineering marathon begins. API gateways unlock, hardware kits handed over, mentorship pods activate, and midnight sprint shifts begin.
-                  </p>
+
+                  {/* Operational Telemetry Summary Chips */}
+                  <div className="grid grid-cols-2 gap-1.5 font-mono text-[9px] text-[#f4efe3]/90">
+                    <div className="p-1.5 bg-white/5 border border-white/10">
+                      <span className="text-[#ff1744] block font-bold">STATIONS:</span>
+                      <span>5 IN SEQUENCE</span>
+                    </div>
+                    <div className="p-1.5 bg-white/5 border border-white/10">
+                      <span className="text-[#ff1744] block font-bold">ROSTER:</span>
+                      <span>800+ BUILDERS</span>
+                    </div>
+                    <div className="p-1.5 bg-white/5 border border-white/10 col-span-2">
+                      <span className="text-[#ff1744] block font-bold">PROTOCOLS:</span>
+                      <span>COMBAT LABS & HARDWARE MELEE</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="pt-4 border-t border-white/15 flex items-center justify-between text-[10px] font-mono text-white/50">
-                  <span>5 CHECKPOINTS IN SEQUENCE</span>
+                <div className="pt-3 border-t border-white/15 flex items-center justify-between text-[10px] font-mono text-white/50">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    ACTIVE SPRINT
+                  </span>
                   <span className="text-[#ff1744] font-bold">SCROLL RIGHT →</span>
                 </div>
-              </div>
+              </TimelineCard>
 
               {/* DAY 01 EVENT CARDS */}
               {SCHEDULE_DATA.day1.map((item, idx) => (
-                <div
+                <TimelineCard
                   key={`day1-${idx}`}
-                  className="w-[280px] sm:w-[320px] h-[390px] sm:h-[420px] max-h-[58vh] flex-shrink-0 p-5 bg-[#0a0a10]/90 backdrop-blur-xl border border-white/15 hover:border-[#ff1744] transition-all flex flex-col justify-between shadow-[0_0_25px_rgba(0,0,0,0.85)] group relative"
+                  className="w-[290px] sm:w-[330px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 group"
                 >
                   <div>
                     {/* Station Node Header */}
-                    <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#ff1744] shadow-[0_0_8px_#ff1744] group-hover:scale-125 transition-transform" />
                         <span className="text-[10px] font-mono text-[#ff1744] tracking-wider font-bold">
@@ -414,187 +585,322 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
                       <span className="text-[10px] font-mono text-white/40">DAY 01</span>
                     </div>
 
-                    <div className="text-3xl sm:text-4xl font-['Anton'] text-[#ff1744] tracking-wide mb-2 drop-shadow-[0_0_12px_rgba(255,23,68,0.5)]">
+                    <div className="text-3xl sm:text-4xl font-['Anton'] text-[#ff1744] tracking-wide mb-1 drop-shadow-[0_0_12px_rgba(255,23,68,0.5)]">
                       {item.time}
                     </div>
-                    <h3 className="text-base font-bold text-[#f4efe3] uppercase tracking-tight mb-2 leading-snug group-hover:text-white transition-colors">
+                    <h3 className="text-base font-bold text-[#f4efe3] uppercase tracking-tight mb-1 leading-snug group-hover:text-white transition-colors">
                       {item.title}
                     </h3>
-                    <p className="text-xs text-[#f4efe3]/75 leading-relaxed font-sans">
+                    <p className="text-xs text-[#f4efe3]/75 leading-relaxed font-sans mb-3 line-clamp-2">
                       {item.desc}
                     </p>
+
+                    {/* Enriched Operational Telemetry Chips */}
+                    <div className="space-y-1.5 font-mono text-[9px]">
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/10 text-[#f4efe3]/90">
+                        <span className="text-[#ff1744] font-bold">LOC:</span>
+                        <span className="truncate">{item.location}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/10 text-[#f4efe3]/90">
+                        <span className="text-[#ff1744] font-bold">SPEC:</span>
+                        <span className="truncate">{item.tag}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/10 text-[#f4efe3]/90">
+                        <span className="text-[#ff1744] font-bold">METRIC:</span>
+                        <span className="truncate">{item.metric}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="pt-3 border-t border-white/10 flex items-center justify-between font-mono text-[10px] text-white/40 uppercase">
+                  <div className="pt-2.5 border-t border-white/10 flex items-center justify-between font-mono text-[10px] text-white/40 uppercase">
                     <span>ARENA PROTOCOL</span>
-                    <span className="text-emerald-400 font-bold">ACTIVE // STAGE 0{idx + 1}</span>
+                    <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      {item.status}
+                    </span>
                   </div>
-                </div>
+                </TimelineCard>
               ))}
 
               {/* STAGE 2 BADGE: DAY 02 */}
-              <div className="w-[300px] sm:w-[340px] h-[390px] sm:h-[420px] max-h-[58vh] flex-shrink-0 p-6 bg-gradient-to-br from-[#ff1744]/30 via-[#0a0a10]/95 to-black/95 backdrop-blur-2xl border-2 border-[#ff1744] shadow-[0_0_40px_rgba(255,23,68,0.35)] flex flex-col justify-between relative">
-                {/* Timeline Junction Diode */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-3 h-3 rounded-full bg-[#ff1744] shadow-[0_0_10px_#ff1744] ring-4 ring-[#ff1744]/30 animate-pulse" />
-                  <span className="font-mono text-[10px] tracking-widest text-[#ff1744] uppercase font-bold">
-                    MILESTONE // STAGE 02
-                  </span>
-                </div>
-
+              <TimelineCard className="w-[320px] sm:w-[350px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 sm:p-6 bg-gradient-to-br from-[#ff1744]/25 via-[#0a0a10]/95 to-black/98 border-[#ff1744]">
                 <div>
-                  <span className="inline-block px-2.5 py-1 bg-[#ff1744] text-white font-mono font-bold text-[10px] uppercase tracking-widest mb-3">
-                    PHASE 02 // THE CLIMAX
-                  </span>
-                  <div className="text-4xl sm:text-5xl font-['Anton'] uppercase text-white leading-none mb-1.5">
-                    DAY 02
+                  {/* Milestone Junction Diode */}
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#ff1744] shadow-[0_0_10px_#ff1744] ring-4 ring-[#ff1744]/30 animate-pulse" />
+                      <span className="font-mono text-[10px] tracking-widest text-[#ff1744] uppercase font-bold">
+                        MILESTONE // STAGE 02
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-white/50 tracking-wider">SAT 15 NOV</span>
                   </div>
-                  <div className="font-mono text-sm font-bold text-[#ff1744] tracking-wider mb-3">
-                    SAT 15 NOV 2026
+
+                  <div>
+                    <span className="inline-block px-2.5 py-0.5 bg-[#ff1744] text-white font-mono font-bold text-[10px] uppercase tracking-widest mb-2 shadow-[0_0_12px_rgba(255,23,68,0.5)]">
+                      PHASE 02 // THE CLIMAX
+                    </span>
+                    <div className="text-4xl sm:text-5xl font-['Anton'] uppercase text-white leading-none mb-1">
+                      DAY 02
+                    </div>
+                    <div className="font-mono text-xs font-bold text-[#ff1744] tracking-wider mb-2">
+                      SAT 15 NOV 2026 // CLIMAX
+                    </div>
+                    <p className="text-xs text-[#f4efe3]/80 leading-relaxed font-sans mb-3">
+                      Code freeze at high noon. Stadium pitches before venture partner juries, live CTF final attack blitz, and ₹8,00,000 in grand honors and trophies.
+                    </p>
                   </div>
-                  <p className="text-xs text-[#f4efe3]/85 leading-relaxed font-sans">
-                    Code freeze at high noon. Stadium pitches before venture partner juries, live CTF final attack blitz, and ₹8,00,000 in grand honors and trophies.
-                  </p>
+
+                  {/* Operational Telemetry Summary Chips */}
+                  <div className="grid grid-cols-2 gap-1.5 font-mono text-[9px] text-[#f4efe3]/90">
+                    <div className="p-1.5 bg-white/5 border border-white/10">
+                      <span className="text-[#ff1744] block font-bold">STATIONS:</span>
+                      <span>5 IN SEQUENCE</span>
+                    </div>
+                    <div className="p-1.5 bg-white/5 border border-white/10">
+                      <span className="text-[#ffd600] block font-bold">BOUNTY:</span>
+                      <span>₹8,00,000 CASH</span>
+                    </div>
+                    <div className="p-1.5 bg-white/5 border border-white/10 col-span-2">
+                      <span className="text-[#ff1744] block font-bold">EVALUATION:</span>
+                      <span>14 VC PARTNERS & JURY PODS</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="pt-4 border-t border-white/15 flex items-center justify-between text-[10px] font-mono text-white/50">
-                  <span>5 CHECKPOINTS IN SEQUENCE</span>
+                <div className="pt-3 border-t border-white/15 flex items-center justify-between text-[10px] font-mono text-white/50">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#ffd600] animate-pulse" />
+                    FINALS RUNTIME
+                  </span>
                   <span className="text-[#ff1744] font-bold">SCROLL RIGHT →</span>
                 </div>
-              </div>
+              </TimelineCard>
 
               {/* DAY 02 EVENT CARDS */}
               {SCHEDULE_DATA.day2.map((item, idx) => {
                 const isAward = item.title.includes("Awards");
                 return (
-                  <div
+                  <TimelineCard
                     key={`day2-${idx}`}
-                    className={`w-[280px] sm:w-[320px] h-[390px] sm:h-[420px] max-h-[58vh] flex-shrink-0 p-5 backdrop-blur-xl border transition-all flex flex-col justify-between shadow-[0_0_25px_rgba(0,0,0,0.85)] group relative ${
-                      isAward
-                        ? "bg-gradient-to-b from-[#ff1744]/25 via-[#0a0a10]/95 to-[#1a050a]/95 border-2 border-[#ffd600] shadow-[0_0_35px_rgba(255,214,0,0.3)]"
-                        : "bg-[#0a0a10]/90 border-white/15 hover:border-[#ff1744]"
-                    }`}
+                    isGold={isAward}
+                    className={`w-[290px] sm:w-[330px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 group ${isAward
+                        ? "bg-gradient-to-b from-[#ffd600]/15 via-[#0a0a10]/95 to-[#151005]/98"
+                        : ""
+                      }`}
                   >
                     <div>
                       {/* Station Node Header */}
-                      <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+                      <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`w-2.5 h-2.5 rounded-full ${
-                              isAward ? "bg-[#ffd600] shadow-[0_0_10px_#ffd600] animate-ping" : "bg-[#ff1744] shadow-[0_0_8px_#ff1744]"
-                            }`}
+                            className={`w-2.5 h-2.5 rounded-full ${isAward
+                                ? "bg-[#ffd600] shadow-[0_0_10px_#ffd600] animate-ping"
+                                : "bg-[#ff1744] shadow-[0_0_8px_#ff1744] group-hover:scale-125 transition-transform"
+                              }`}
                           />
                           <span
-                            className={`text-[10px] font-mono tracking-wider font-bold ${
-                              isAward ? "text-[#ffd600]" : "text-[#ff1744]"
-                            }`}
+                            className={`text-[10px] font-mono tracking-wider font-bold ${isAward ? "text-[#ffd600]" : "text-[#ff1744]"
+                              }`}
                           >
-                            CHECKPOINT 0{idx + 1}
+                            {isAward ? "CLIMAX CHECKPOINT" : `CHECKPOINT 0${idx + 1}`}
                           </span>
                         </div>
                         <span className="text-[10px] font-mono text-white/40">DAY 02</span>
                       </div>
 
                       <div
-                        className={`text-3xl sm:text-4xl font-['Anton'] tracking-wide mb-2 ${
-                          isAward
+                        className={`text-3xl sm:text-4xl font-['Anton'] tracking-wide mb-1 ${isAward
                             ? "text-[#ffd600] drop-shadow-[0_0_15px_rgba(255,214,0,0.6)]"
                             : "text-[#ff1744] drop-shadow-[0_0_12px_rgba(255,23,68,0.5)]"
-                        }`}
+                          }`}
                       >
                         {item.time}
                       </div>
-                      <h3 className="text-base font-bold text-[#f4efe3] uppercase tracking-tight mb-2 leading-snug group-hover:text-white transition-colors">
+                      <h3
+                        className={`text-base font-bold uppercase tracking-tight mb-1 leading-snug transition-colors ${isAward ? "text-[#ffd600]" : "text-[#f4efe3] group-hover:text-white"
+                          }`}
+                      >
                         {item.title}
                       </h3>
-                      <p className="text-xs text-[#f4efe3]/75 leading-relaxed font-sans">
+                      <p className="text-xs text-[#f4efe3]/75 leading-relaxed font-sans mb-3 line-clamp-2">
                         {item.desc}
                       </p>
+
+                      {/* Enriched Operational Telemetry Chips */}
+                      <div className="space-y-1.5 font-mono text-[9px]">
+                        <div
+                          className={`flex items-center gap-1.5 px-2 py-1 border ${isAward
+                              ? "bg-[#ffd600]/10 border-[#ffd600]/30 text-[#f4efe3]"
+                              : "bg-white/5 border-white/10 text-[#f4efe3]/90"
+                            }`}
+                        >
+                          <span className={isAward ? "text-[#ffd600] font-bold" : "text-[#ff1744] font-bold"}>
+                            LOC:
+                          </span>
+                          <span className="truncate">{item.location}</span>
+                        </div>
+                        <div
+                          className={`flex items-center gap-1.5 px-2 py-1 border ${isAward
+                              ? "bg-[#ffd600]/10 border-[#ffd600]/30 text-[#f4efe3]"
+                              : "bg-white/5 border-white/10 text-[#f4efe3]/90"
+                            }`}
+                        >
+                          <span className={isAward ? "text-[#ffd600] font-bold" : "text-[#ff1744] font-bold"}>
+                            SPEC:
+                          </span>
+                          <span className="truncate">{item.tag}</span>
+                        </div>
+                        <div
+                          className={`flex items-center gap-1.5 px-2 py-1 border ${isAward
+                              ? "bg-[#ffd600]/10 border-[#ffd600]/30 text-[#f4efe3]"
+                              : "bg-white/5 border-white/10 text-[#f4efe3]/90"
+                            }`}
+                        >
+                          <span className={isAward ? "text-[#ffd600] font-bold" : "text-[#ff1744] font-bold"}>
+                            METRIC:
+                          </span>
+                          <span className="truncate">{item.metric}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="pt-3 border-t border-white/10 flex items-center justify-between font-mono text-[10px] text-white/40 uppercase">
-                      <span>{isAward ? "BOUNTY POOL" : "ARENA PROTOCOL"}</span>
-                      <span className={isAward ? "text-[#ffd600] font-bold" : "text-emerald-400 font-bold"}>
-                        {isAward ? "₹8,00,000 POOL" : "ACTIVE // STAGE 0" + (idx + 1)}
+                    <div className="pt-2.5 border-t border-white/10 flex items-center justify-between font-mono text-[10px] text-white/40 uppercase">
+                      <span>{isAward ? "ESCROW VERIFIED" : "ARENA PROTOCOL"}</span>
+                      <span
+                        className={`font-bold flex items-center gap-1.5 ${isAward ? "text-[#ffd600]" : "text-emerald-400"
+                          }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full animate-pulse ${isAward ? "bg-[#ffd600]" : "bg-emerald-400"
+                            }`}
+                        />
+                        {item.status}
                       </span>
                     </div>
-                  </div>
+                  </TimelineCard>
                 );
               })}
 
               {/* STAGE 3: BACKERS & PARTNER ECOSYSTEM */}
-              <div className="w-[540px] sm:w-[600px] h-[390px] sm:h-[420px] max-h-[58vh] flex-shrink-0 p-5 sm:p-6 bg-[#0a0a10]/95 backdrop-blur-2xl border border-white/20 shadow-[0_0_35px_rgba(0,0,0,0.95)] flex flex-col justify-between relative">
-                {/* Timeline Junction Diode */}
-                <div className="flex items-center justify-between border-b border-white/15 pb-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#ff1744] shadow-[0_0_8px_#ff1744]" />
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-[#ff1744] font-bold">
-                      STAGE 03 // PARTNER ECOSYSTEM
+              <TimelineCard className="w-[580px] sm:w-[660px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 sm:p-6 bg-[#0a0a10]/95">
+                <div>
+                  {/* Milestone Junction Diode */}
+                  <div className="flex items-center justify-between border-b border-white/15 pb-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#ff1744] shadow-[0_0_8px_#ff1744]" />
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-[#ff1744] font-bold">
+                        STAGE 03 // PARTNER ECOSYSTEM
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      7 ENTERPRISE NODES
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono text-white/40">7 CO-BUILDERS</span>
-                </div>
 
-                <div>
-                  <h3 className="text-2xl font-['Anton'] text-white uppercase tracking-tight mb-2.5">
-                    Backers Of The Brave
-                  </h3>
+                  {/* Hero Command Frame: Title Partner NOVA//01 */}
+                  <div className="p-3 mb-2.5 border border-[#ff1744]/60 bg-gradient-to-r from-[#ff1744]/20 via-[#0a0a10] to-[#ff1744]/10 shadow-[0_0_20px_rgba(255,23,68,0.2)] relative">
+                    <div className="flex items-center justify-between text-[9px] font-mono mb-1">
+                      <span className="px-2 py-0.5 bg-[#ff1744] text-white font-bold tracking-widest uppercase">
+                        TITLE PARTNER // 01
+                      </span>
+                      <span className="text-[#ff1744] font-bold tracking-wider">COMPUTE GRANTS AVAILABLE</span>
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <div className="text-2xl sm:text-3xl font-['Anton'] text-white tracking-wide">
+                        NOVA//01
+                      </div>
+                      <div className="text-[10px] font-mono text-[#f4efe3]/80">
+                        Quantum Computing & Cloud Infrastructure
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tiered Partner Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {SPONSORS.map((sp, idx) => (
+                    {SPONSORS.filter((s) => s.kind !== "featured").map((sp, idx) => (
                       <div
                         key={idx}
-                        className={`p-2.5 border text-center font-mono transition-all ${
-                          sp.kind === "featured"
-                            ? "col-span-2 sm:col-span-3 border-[#ff1744] bg-[#ff1744]/15 text-white shadow-[0_0_15px_rgba(255,23,68,0.25)]"
-                            : "border-white/10 bg-black/60 text-white/80 hover:border-white/30"
-                        }`}
+                        className="p-2 border border-white/10 bg-black/60 hover:border-[#ff1744]/50 transition-all font-mono"
                       >
-                        <span className="block text-[8px] uppercase tracking-wider text-white/40">{sp.tier}</span>
-                        <span className="text-sm font-['Anton'] tracking-wide text-white block my-0.5">{sp.name}</span>
-                        <span className="text-[8px] text-white/50 line-clamp-1">{sp.desc}</span>
+                        <span className="block text-[8px] uppercase tracking-wider text-white/40">
+                          {sp.tier}
+                        </span>
+                        <span className="text-xs font-['Anton'] tracking-wide text-white block my-0.5">
+                          {sp.name}
+                        </span>
+                        <span className="text-[8px] text-white/60 line-clamp-1">
+                          {sp.desc}
+                        </span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-white/10 text-[9px] font-mono text-white/40 uppercase flex items-center justify-between">
-                  <span>SUPPORTED BY LEADING TECH NETWORKS</span>
-                  <span className="text-[#ff1744]">STAGE 03 // VERIFIED</span>
+                <div className="pt-2.5 border-t border-white/10 text-[9px] font-mono text-white/40 uppercase flex items-center justify-between">
+                  <span>ENGINEERING ALLIANCE PROTOCOL</span>
+                  <span className="text-[#ff1744] font-bold">STAGE 03 // VERIFIED</span>
                 </div>
-              </div>
+              </TimelineCard>
 
               {/* STAGE 4: TRANSMISSION END & FINALE */}
-              <div className="w-[300px] sm:w-[340px] h-[390px] sm:h-[420px] max-h-[58vh] flex-shrink-0 p-6 bg-gradient-to-b from-[#0a0a10]/95 via-[#1a050a]/95 to-black/95 backdrop-blur-2xl border-2 border-[#ff1744] shadow-[0_0_45px_rgba(255,23,68,0.5)] flex flex-col justify-between relative">
+              <TimelineCard className="w-[340px] sm:w-[380px] h-[430px] sm:h-[460px] max-h-[64vh] p-5 sm:p-6 bg-gradient-to-b from-[#0a0a10]/95 via-[#1a050a]/95 to-black/98 border-[#ff1744]">
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse" />
-                    <span className="font-mono text-[10px] uppercase font-bold text-emerald-400 tracking-widest">
-                      STAGE 04 // READY
-                    </span>
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse" />
+                      <span className="font-mono text-[10px] uppercase font-bold text-emerald-400 tracking-widest">
+                        STAGE 04 // LAUNCH COMMAND
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-white/40">PORTAL ONLINE</span>
                   </div>
-                  <div className="text-3xl sm:text-4xl font-['Anton'] text-white uppercase tracking-tight mb-2">
+
+                  <div className="text-3xl sm:text-4xl font-['Anton'] text-white uppercase tracking-tight mb-1">
                     ENTER THE ARENAS
                   </div>
-                  <p className="text-xs text-[#f4efe3]/85 leading-relaxed font-sans mb-3">
-                    Registrations closing soon for all 6 combat arenas. Reserve your squad credentials now.
+                  <p className="text-xs text-[#f4efe3]/80 leading-relaxed font-sans mb-3">
+                    Registrations closing soon for all 6 combat arenas. Reserve squad credentials now.
                   </p>
+
+                  {/* 2x2 Combat Telemetry Grid */}
+                  <div className="grid grid-cols-2 gap-1.5 font-mono text-[10px] mb-3">
+                    <div className="p-2 bg-white/5 border border-white/10 text-center">
+                      <div className="text-sm font-['Anton'] text-[#ff1744]">6 ARENAS</div>
+                      <div className="text-[8px] text-white/50 uppercase">FULL ROSTER</div>
+                    </div>
+                    <div className="p-2 bg-white/5 border border-white/10 text-center">
+                      <div className="text-sm font-['Anton'] text-[#ffd600]">₹8L POOL</div>
+                      <div className="text-[8px] text-white/50 uppercase">PRIZE ESCROW</div>
+                    </div>
+                    <div className="p-2 bg-white/5 border border-white/10 text-center">
+                      <div className="text-sm font-['Anton'] text-white">120+ SQUADS</div>
+                      <div className="text-[8px] text-white/50 uppercase">REGISTERED</div>
+                    </div>
+                    <div className="p-2 bg-white/5 border border-white/10 text-center">
+                      <div className="text-sm font-['Anton'] text-emerald-400">36 HOURS</div>
+                      <div className="text-[8px] text-white/50 uppercase">SPRINT RUNTIME</div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2.5 font-mono text-xs">
+                <div className="space-y-2 font-mono text-xs">
                   <button
-                    onClick={() => (onOpenRegisterModal ? onOpenRegisterModal() : undefined)}
-                    className="w-full py-3 bg-[#ff1744] hover:bg-[#ff3b42] text-white font-bold uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(255,23,68,0.6),3px_3px_0_#000]"
+                    onClick={() => (onDownloadBrochure ? onDownloadBrochure() : undefined)}
+                    className="w-full py-2.5 sm:py-3 bg-[#ff1744] hover:bg-[#ff3b42] text-white font-bold uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(255,23,68,0.7),3px_3px_0_#000] active:translate-y-0.5 flex items-center justify-center gap-2"
                   >
-                    REGISTER NOW ↗
+                    <span>DOWNLOAD BROCHURE</span>
+                    <span>↓</span>
                   </button>
                   <button
                     onClick={() => onJumpToProgress(0.0)}
-                    className="w-full py-2.5 border border-white/25 bg-black/70 hover:bg-white hover:text-black text-white/80 font-bold uppercase tracking-wider transition-all"
+                    className="w-full py-2 border border-white/25 bg-black/80 hover:bg-white hover:text-black text-white/80 font-bold uppercase tracking-wider transition-all text-[11px]"
                   >
                     RETURN TO TOP ↑
                   </button>
                 </div>
-              </div>
+              </TimelineCard>
             </div>
           </div>
 
@@ -615,10 +921,11 @@ export const NarrativeLayers: React.FC<NarrativeLayersProps> = ({
                 Top ↑
               </button>
               <button
-                onClick={() => (onOpenRegisterModal ? onOpenRegisterModal() : undefined)}
-                className="px-5 py-1.5 bg-[#ff1744] hover:bg-[#ff3b42] text-white font-mono font-bold text-xs uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(255,23,68,0.4),2px_2px_0_#000]"
+                onClick={() => (onDownloadBrochure ? onDownloadBrochure() : undefined)}
+                className="px-4 py-1.5 bg-[#ff1744] hover:bg-[#ff3b42] text-white font-mono font-bold text-xs uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(255,23,68,0.4),2px_2px_0_#000] flex items-center gap-1.5"
               >
-                Register ↗
+                <span>Brochure</span>
+                <span>↓</span>
               </button>
             </div>
           </div>

@@ -5,12 +5,14 @@ interface TrackModalProps {
   track: TrackItem | null;
   onClose: () => void;
   onRegisterTrack: (trackTitle: string) => void;
+  onDownloadBrochure?: () => void;
 }
 
 export const TrackModal: React.FC<TrackModalProps> = ({
   track,
   onClose,
   onRegisterTrack,
+  onDownloadBrochure,
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -93,12 +95,17 @@ export const TrackModal: React.FC<TrackModalProps> = ({
           </button>
           <button
             onClick={() => {
-              onRegisterTrack(track.title);
+              if (onDownloadBrochure) {
+                onDownloadBrochure();
+              } else {
+                onRegisterTrack(track.title);
+              }
               onClose();
             }}
-            className="px-6 py-2.5 bg-[#e5242a] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#ff4549] transition-all shadow-[4px_4px_0_#000]"
+            className="px-6 py-2.5 bg-[#e5242a] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#ff4549] transition-all shadow-[4px_4px_0_#000] flex items-center gap-1.5"
           >
-            Claim Entry Slot ↗
+            <span>DOWNLOAD BROCHURE</span>
+            <span>↓</span>
           </button>
         </div>
       </div>
